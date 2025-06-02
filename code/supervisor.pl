@@ -14,17 +14,17 @@
 
 /*
 [load].
-[actor_model(supervisor), utils(logger)].
+[code(supervisor), utils(logger)].
 [load_tests].
 set_log_level(debug).
-run_tests(actor_model:restarting_supervised_supervisors).
+run_tests(actors:restarting_supervised_supervisors).
 */
 :- module(supervisor, []).
 
 
 
 :- use_module(library(option)).
-:- use_module(actor_utils).
+:- use_module(code(actor_utils)).
 :- use_module(code(worker)).
 :- use_module(utils(logger)).
 

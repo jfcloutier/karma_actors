@@ -42,4 +42,4 @@ An actor unsubscribes from all topics with `all_unsubscribed`.
 
 On termination, an actor must send an `exited(Kind, Module, Name, Exit)` message to its supervisor where Exit = `exit(normal)` means normal exit.
 
-See `./tests/actor_model` for simple examples of using the Karma actor model.
+See `./tests/actors` for simple examples of using the Karma actor model.

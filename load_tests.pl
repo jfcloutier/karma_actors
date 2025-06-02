@@ -1,3 +1,3 @@
 :- [
-    'tests/actor_model.plt'
+    'tests/actors.plt'
    ].

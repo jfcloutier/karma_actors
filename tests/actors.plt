@@ -2,12 +2,12 @@
 /*
 [load].
 [utils(logger)].
-['tests/actor_model/actor_model.plt'].
+['tests/actors/actors.plt'].
 set_log_level(debug).
-run_tests(actor_model).
+run_tests(actors).
 */
 
-:- begin_tests(actor_model).
+:- begin_tests(actors).
 
 :- use_module(utils(logger)).
 :- use_module(code(worker)).
@@ -329,4 +329,4 @@ test(communicating_with_supervised_static_children) :-
 	assertion(
 		 \+ is_thread(top)).
 
-:- end_tests(actor_model).
+:- end_tests(actors).

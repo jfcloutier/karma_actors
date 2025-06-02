@@ -20,7 +20,7 @@ actor_started(Name, Goal, Options) :-
 	thread_create(Goal, _, FullOptions).
 
 actor_exited(Name) :-
-	log(debug, actor_model, 'About to exit actor ~w', [Name]), 
+	log(debug, actors, 'About to exit actor ~w', [Name]), 
 	sent(Name, 
 		control(exit)).
 
@@ -77,13 +77,13 @@ pairs_from_groups([Key-[Value|_]|Rest], [Key-Value|OtherPairs]) :-
 % Tell a thread to process a message in priority by signalling it
 
 signal(Name, Module, Signal) :-
-	log(debug, actor_model, 'Signaling ~w ~w with ~p', [Module, Name, Signal]), 
+	log(debug, actors, 'Signaling ~w ~w with ~p', [Module, Name, Signal]), 
 	is_thread(Name)
 	 ->
 			(Goal =.. [ : , Module, 
 		signal_processed(Signal)], 
 		thread_signal(Name, Goal));
-	log(debug, actor_model, 'Can not signal non-existent thread ~w', [Name]).
+	log(debug, actors, 'Can not signal non-existent thread ~w', [Name]).
 
 % Signal a control message
 
@@ -96,17 +96,17 @@ control_sent(Name, Module, Control) :-
 		signal(Name, Module, 
 			control(Control)), Exception, 
 		(
-			log(warn, actor_model, "Failed to send signal ~p to ~w (~w): ~p", [Control, Name, Module, Exception]), true)).
+			log(warn, actors, "Failed to send signal ~p to ~w (~w): ~p", [Control, Name, Module, Exception]), true)).
 
 % Undecorated message sent with best effort.
 
 sent(Name, Message) :-
 	catch(
 		(
-			log(debug, actor_model, '~@ is sending ~p to ~w', [self, Message, Name]), 
+			log(debug, actors, '~@ is sending ~p to ~w', [self, Message, Name]), 
 			thread_send_message(Name, Message)), Exception, 
 		(
-			log(warn, actor_model, "Failed to send message ~p to ~w: ~p", [Message, Name, Exception]), true)).
+			log(warn, actors, "Failed to send message ~p to ~w: ~p", [Message, Name, Exception]), true)).
 
 % Send undecorated message periodically
 
@@ -141,20 +141,20 @@ query_answered(Name, Question, Answer) :-
 	query_answered(Name, Question, 5, Answer).
 
 query_answered(Name, Question, Timeout, Answer) :-
-	log(info, actor_model, '~@ is sending query ~p to ~w', [self, Question, Name]), 
+	log(info, actors, '~@ is sending query ~p to ~w', [self, Question, Name]), 
 	catch(
 		(
 			thread_self(From), 
 			thread_send_message(Name, 
 				query(Question, From)), % Fails (quietly) is a matching message is not received in time
 				
-			log(debug, actor_model, '~w is waiting for response(Answer, ~p, ~w), timeout is ~w', [From, Question, Name, Timeout]), 
+			log(debug, actors, '~w is waiting for response(Answer, ~p, ~w), timeout is ~w', [From, Question, Name, Timeout]), 
 			thread_get_message(From, 
 				response(Answer, Question, Name), 
 				[timeout(Timeout)]), 
-			log(info, actor_model, 'Got answer ~p from ~w to query ~p', [Answer, Name, Question])), Exception, 
+			log(info, actors, 'Got answer ~p from ~w to query ~p', [Answer, Name, Question])), Exception, 
 		(
-			log(warn, actor_model, "Failed to query ~w about ~p: ~p~n", [Name, Question, Exception]), fail)).
+			log(warn, actors, "Failed to query ~w about ~p: ~p~n", [Name, Question, Exception]), fail)).
 
 % Wait 20s for a actor thread to be alive
 
@@ -162,14 +162,14 @@ actor_ready(Name) :-
 	actor_ready(Name, 20).
 
 actor_ready(Name, 0) :-
-	log(warn, actor_model, "Failed waiting for actor thread ~w~n", [Name]), !, fail.
+	log(warn, actors, "Failed waiting for actor thread ~w~n", [Name]), !, fail.
 
 actor_ready(Name, CountDown) :-
 	is_thread(Name)
 	 ->
-			log(debug, actor_model, 'Actor ~w is running', [Name]), true;
+			log(debug, actors, 'Actor ~w is running', [Name]), true;
 	(
-		log(debug, actor_model, 'Waiting for actor thread ~w (~w)', [Name, CountDown]), 
+		log(debug, actors, 'Waiting for actor thread ~w (~w)', [Name, CountDown]), 
 		sleep(0.25), AttemptsLeft is CountDown - 1, 
 		actor_ready(Name, AttemptsLeft)).
 
@@ -179,12 +179,12 @@ actor_stopped(Name) :-
 	actor_stopped(Name, 60).
 
 actor_stopped(Name, 0) :-
-	log(warn, actor_model, 'Failed waiting for actor thread ~w to be stopped', [Name]), !, fail.
+	log(warn, actors, 'Failed waiting for actor thread ~w to be stopped', [Name]), !, fail.
 
 actor_stopped(Name, CountDown) :-
 	 \+ is_thread(Name) ->
 		true;
 	(
-		log(debug, actor_model, 'Waiting for actor thread stopped ~w (~w)~n', [Name, CountDown]), 
+		log(debug, actors, 'Waiting for actor thread stopped ~w (~w)~n', [Name, CountDown]), 
 		sleep(0.25), AttemptsLeft is CountDown - 1, 
 		actor_stopped(Name, AttemptsLeft)).

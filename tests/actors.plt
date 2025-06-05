@@ -261,9 +261,60 @@ test(subscribing_unsubscribing) :-
 		is_thread(bob)), 
 	assertion(
 		is_thread(alice)), 
-	unsubscribed(bob, party), 
+    assertion(subscription(bob, party-any)),
+	assertion(subscription(bob, party-alice)),
+	assertion(subscription(bob, police-any)),
+	assertion(subscription(bob, police-alice)),
+	unsubscribed(bob, party),
+	assertion(\+ subscription(bob, party-any)),
+	assertion(\+ subscription(bob, party-alice)),
 	all_subscribed(alice, [party, police]), 
-	all_unsubscribed(alice), 
+	assertion(subscription(alice, party-any)),
+	assertion(subscription(alice, party-bob)),
+	assertion(subscription(alice, police-any)),
+	assertion(subscription(alice, police-bob)),
+	all_unsubscribed(alice),
+	assertion(\+ subscription(alice, party-any)),
+	assertion(\+ subscription(alice, police-any)),
+	sleep(1), 
+	supervisor : stopped(top), 
+	assertion(
+		 \+ is_thread(pubsub)), 
+	assertion(
+		 \+ is_thread(alice)), 
+	assertion(
+		 \+ is_thread(bob)), 
+	assertion(
+		 \+ is_thread(top)).
+
+test(subscribing_unsubscribing_from) :-
+	supervisor : started(top, 
+		[children([pubsub, 
+			worker(bob, 
+				[topics([party-alice, police-alice]), 
+				init(
+					[mood(bored)]), 
+				restarted(transient)]), 
+			worker(alice, alice, 
+				[topics([]), 
+				init(
+					[mood(peaceful)]), 
+				restarted(transient)])])]), 
+	assertion(
+		is_thread(top)), 
+	assertion(
+		is_thread(pubsub)), 
+	assertion(
+		is_thread(bob)), 
+	assertion(
+		is_thread(alice)), 
+	unsubscribed(bob, party-alice), 
+	all_subscribed(alice, [party-bob, police-bob]), 
+	assertion(subscription(alice, party-bob)),
+	assertion(subscription(alice, police-bob)),
+	unsubscribed_from(alice, bob),
+	assertion(\+ subscription(party-bob)),
+	assertion(\+ subscription(police-bob)),
 	sleep(1), 
 	supervisor : stopped(top), 
 	assertion(

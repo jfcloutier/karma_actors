@@ -12,7 +12,7 @@ Actors receive events `event(Topic, Payload, Source).
 TODO: Set an exclusive affinity to the PubSub thread to maxinimize its time being scheduled to a core
 */
 
-:- module(pubsub, [subscribed/1, subscribed/2, all_subscribed/1, all_subscribed/2, all_unsubscribed/0, all_unsubscribed/1, unsubscribed/1, unsubscribed/2, published/2]).
+:- module(pubsub, [subscribed/1, subscribed/2, all_subscribed/1, all_subscribed/2, all_unsubscribed/0, all_unsubscribed/1, unsubscribed/1, unsubscribed/2, unsubscribed_from/1, unsubscribed_from/2, subscription/1, subscription/2, published/2]).
 
 :- use_module(library(aggregate)).
 :- use_module(utils(logger)).
@@ -52,6 +52,15 @@ unsubscribed(Subscriber, Sub) :-
 	message_sent(Pubsub,
 		unsubscribed(Subscriber, Sub)).
 
+unsubscribed_from(Source) :-
+	self(Subscriber),
+	unsubscribed_from(Subscriber, Source).
+
+unsubscribed_from(Subscriber, Source) :-
+	name(Pubsub),
+	message_sent(Pubsub,
+		unsubscribed_from(Subscriber, Source)).
+
 all_unsubscribed :-
 	self(Subscriber),
 	all_unsubscribed(Subscriber).
@@ -66,6 +75,14 @@ published(Topic, Payload) :-
 	name(Pubsub),
 	message_sent(Pubsub,
 		pub(Topic, Payload, Source)).
+
+subscription(Topic) :-
+	self(Subscriber),
+	subscription(Subscriber, Topic).
+
+subscription(Subscriber, Topic) :-
+	name(PubSub),
+	query_answered(PubSub, subscription(Subscriber, Topic), true).
 
 %% Private
 
@@ -90,12 +107,22 @@ handled(message(unsubscribed(Subscriber, Sub), _), State, NewState) :-
 	log(debug, pubsub, "Unsubscribing ~w from ~w~n", [Subscriber, Sub]),
 	 remove_subscription(Subscriber, Sub, State, NewState).
 
+handled(message(unsubscribed_from(Subscriber, Source), _), State, NewState) :-
+	log(debug, pubsub, "Unsubscribing ~w from source ~w~n", [Subscriber, Source]),
+	 remove_subscriptions_from(Subscriber, Source, State, NewState).
+
 handled(message(all_unsubscribed(Subscriber), _), State, NewState) :-
 	 remove_all_subscriptions(Subscriber, State, NewState).
 
 handled(message(pub(Topic, Payload, Source), _), State, State) :-
 	broadcast(event(Topic, Payload, Source),
 		State).
+
+handled(query(subscription(Subscriber, Topic)), State, true) :-
+	get_state(State, subscriptions, Subscriptions),
+	member(subscription(Subscriber, T), Subscriptions),
+	sub_match(Topic, T), !.
+handled(query(subscription(_, _)), _, false).
 
 broadcast(event(Topic, Payload, Source), State) :-
 	Sub = Topic - Source,
@@ -138,19 +165,29 @@ remove_subscription(Subscriber, Topic-Source, State, NewState) :-
 remove_subscription(Subscriber, Topic, State, NewState) :-
 	remove_subscription(Subscriber, Topic-any, State, NewState).
 
+remove_subscriptions_from(Subscriber, Source, State, NewState) :-
+	get_state(State, subscriptions, Subscriptions),
+	delete_subs_from(Subscriptions, Subscriber, Source, Subscriptions1),
+	put_state(State, subscriptions, Subscriptions1, NewState).
+
 delete_matching_subs([], _, []).
 
-delete_matching_subs([subscription(Subscriber, Sub) | Rest],
-	subscription(Subscriber, DeleteSub),
-		RemainingSubscriptions) :-
-			sub_match(Sub, DeleteSub), !,
-			delete_matching_subs(Rest, subscription(Subscriber, DeleteSub), RemainingSubscriptions).
+delete_matching_subs([subscription(Subscriber, Sub) | Rest], subscription(Subscriber, DeleteSub), RemainingSubscriptions) :-
+	sub_match(Sub, DeleteSub), !,
+	delete_matching_subs(Rest, subscription(Subscriber, DeleteSub), RemainingSubscriptions).
 	
 delete_matching_subs([Subscription | Rest],
 	subscription(Subscriber, DeleteSub),
 		[Subscription | RemainingSubscriptions]) :-
 			delete_matching_subs(Rest, subscription(Subscriber, DeleteSub),
 		RemainingSubscriptions).
+
+delete_subs_from([], _, _, []) .
+delete_subs_from([subscription(Subscriber, _ - Source) | Rest], Subscriber, Source, RemainingSubscriptions) :-
+	!,
+	delete_subs_from(Rest, Subscriber, Source, RemainingSubscriptions).
+delete_subs_from([Subscription | Rest], Subscriber, Source, [Subscription | RemainingSubscriptions]) :-
+	delete_subs_from(Rest, Subscriber, Source, RemainingSubscriptions).
 
 remove_all_subscriptions(Subscriber, State, NewState) :-
 	get_state(State, subscriptions, Subscriptions),

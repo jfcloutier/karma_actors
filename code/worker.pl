@@ -21,8 +21,8 @@
 
 
 :- use_module(library(option)).
-:- use_module(code(actor_utils)).
-:- use_module(code(pubsub)).
+:- use_module(actors(actor_utils)).
+:- use_module(actors(pubsub)).
 :- use_module(utils(logger)).
 
 %%% Supervised behavior

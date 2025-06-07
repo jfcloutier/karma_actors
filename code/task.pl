@@ -6,7 +6,7 @@ Support for delayed async tasks and async tasks with completion logic.
 
 
 
-:- use_module(code(actor_utils)).
+:- use_module(actors(actor_utils)).
 :- use_module(utils(logger)).
 
 do_and_then(Task, Completion) :-

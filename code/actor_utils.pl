@@ -7,7 +7,7 @@
     pick_some/2]).
 
 :- use_module(utils(logger)).
-:- use_module(code(timer)).
+:- use_module(actors(timer)).
 
 self(Name) :-
 	thread_self(Name).

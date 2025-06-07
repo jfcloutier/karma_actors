@@ -10,10 +10,10 @@ run_tests(actors).
 :- begin_tests(actors).
 
 :- use_module(utils(logger)).
-:- use_module(code(worker)).
-:- use_module(code(supervisor)).
-:- use_module(code(pubsub)).
-:- use_module(code(actor_utils)).
+:- use_module(actors(worker)).
+:- use_module(actors(supervisor)).
+:- use_module(actors(pubsub)).
+:- use_module(actors(actor_utils)).
 
 :- use_module(bob).
 :- use_module(alice).

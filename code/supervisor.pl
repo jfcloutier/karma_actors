@@ -14,7 +14,7 @@
 
 /*
 [load].
-[code(supervisor), utils(logger)].
+[actors(supervisor), utils(logger)].
 [load_tests].
 set_log_level(debug).
 run_tests(actors:restarting_supervised_supervisors).
@@ -24,8 +24,8 @@ run_tests(actors:restarting_supervised_supervisors).
 
 
 :- use_module(library(option)).
-:- use_module(code(actor_utils)).
-:- use_module(code(worker)).
+:- use_module(actors(actor_utils)).
+:- use_module(actors(worker)).
 :- use_module(utils(logger)).
 
 % child(StaticOrDynamic, Supervisor, Kind, Module, Name, Goal, Restart) -- Kind is worker or supervisor

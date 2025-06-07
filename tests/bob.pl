@@ -2,11 +2,11 @@
 
 :- module(bob, []).
 
-:- use_module(code(worker)).
+:- use_module(actors(worker)).
 :- use_module(utils(logger)).
-:- use_module(code(actor_utils)).
-:- use_module(code(timer)).
-:- use_module(code(pubsub), [published/2]).
+:- use_module(actors(actor_utils)).
+:- use_module(actors(timer)).
+:- use_module(actors(pubsub), [published/2]).
 
 :- thread_local timer/1.
 

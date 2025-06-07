@@ -16,8 +16,8 @@ TODO: Set an exclusive affinity to the PubSub thread to maxinimize its time bein
 
 :- use_module(library(aggregate)).
 :- use_module(utils(logger)).
-:- use_module(code(actor_utils)).
-:- use_module(code(worker)).
+:- use_module(actors(actor_utils)).
+:- use_module(actors(worker)).
 
 % Singleton thread's name
 name(pubsub).

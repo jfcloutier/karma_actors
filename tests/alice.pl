@@ -3,9 +3,9 @@
 :- module(alice, []).
 
 :- use_module(utils(logger)).
-:- use_module(code(actor_utils)).
-:- use_module(code(worker)).
-:- use_module(code(pubsub), [published/2]).
+:- use_module(actors(actor_utils)).
+:- use_module(actors(worker)).
+:- use_module(actors(pubsub), [published/2]).
 
 name(alice).
 

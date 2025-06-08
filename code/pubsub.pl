@@ -87,16 +87,16 @@ subscription(Subscriber, Topic) :-
 %% Private
 
 init(_, State) :-
-	log(info, pubsub, 'Initializing pubsub'),
+	log(info, pubsub, "Initializing pubsub"),
 	empty_state(EmptyState),
 	put_state(EmptyState, [subscriptions - []], State).
 
 % Called when worker exits
 terminated :-
-	log(info, pubsub, 'Pubsub ~@ terminated', [self]).
+	log(info, pubsub, "Pubsub ~@ terminated", [self]).
 
 signal_processed(control(stopped)) :-
-	log(debug, pubsub, 'Stopping pubsub'),
+	log(debug, pubsub, "Stopping pubsub"),
 	worker : stopped.
 
 handled(message(subscribed(Subscriber, Sub), _), State, NewState) :-

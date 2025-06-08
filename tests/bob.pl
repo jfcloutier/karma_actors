@@ -27,13 +27,13 @@ init(Options, State) :-
 	put_state(EmptyState, [mood - Mood], State).
 
 signal_processed(control(stopped)) :-
-	log(debug, bob, 'Processing stop signal'), worker : stopped.
+	log(debug, bob, "Processing stop signal"), worker : stopped.
 
 terminated :-
-	log(debug, bob, 'bob terminating'), 
+	log(debug, bob, "bob terminating"), 
 	timer(Timer), 
 	timer : stopped(Timer), 
-	log(debug, bob, 'bob terminated').
+	log(debug, bob, "bob terminated").
 
 % Ignore all events from self
 handled(event(_,_, bob), State, State).

@@ -40,23 +40,23 @@ started(Supervisor) :-
 	started(Supervisor, []).
 
 started(Supervisor, Options) :-
-	log(debug, supervisor, 'Starting supervisor ~w with options ~p', [Supervisor, Options]),
+	log(debug, supervisor, "Starting supervisor ~w with options ~p", [Supervisor, Options]),
 	actor_started(Supervisor,
 		supervisor : run_unsupervised(Options)),
 	option(children(Children),
 		Options,
 		[]),
-	log(debug, supervisor, 'Waiting for static children of ~w', [Supervisor]),
+	log(debug, supervisor, "Waiting for static children of ~w", [Supervisor]),
 	wait_for_static_children(Children).
 
 stopped(Supervisor) :-
-	log(debug, supervisor, 'Stopping supervisor ~w', [Supervisor]),
+	log(debug, supervisor, "Stopping supervisor ~w", [Supervisor]),
 	control_sent(Supervisor, supervisor, stopped),
 	actor_stopped(Supervisor).
 
 stopped(Supervisor, WaitSecs) :-
 	Timeout is WaitSecs*4,
-	log(debug, supervisor, 'Stopping supervisor ~w', [Supervisor]),
+	log(debug, supervisor, "Stopping supervisor ~w", [Supervisor]),
 	control_sent(Supervisor, supervisor, stopped),
 	actor_stopped(Supervisor, Timeout).
 
@@ -64,7 +64,7 @@ exit(Supervisor) :-
 	actor_exited(Supervisor).
 
 children(Supervisor, Children) :-
-	log(debug, supervisor, 'Getting children of ~w', [Supervisor]),
+	log(debug, supervisor, "Getting children of ~w", [Supervisor]),
 	query_answered(Supervisor, children, Children).
 
 %%% Public
@@ -102,7 +102,7 @@ child_stopped(Supervisor, Kind, Module) :-
 % Stop a named child actor
 
 child_stopped(Supervisor, Kind, Module, Name) :-
-	log(debug, supervisor, 'Stop ~w child ~w named ~w of ~w', [Kind, Module, Name, Supervisor]),
+	log(debug, supervisor, "Stop ~w child ~w named ~w of ~w", [Kind, Module, Name, Supervisor]),
 	sent(Supervisor,
 		child_stopped(Kind, Module, Name)).
 
@@ -111,7 +111,7 @@ child_stopped(Supervisor, Kind, Module, Name) :-
 % Start a static, supervised supervisor thread
 
 started(Supervisor, Options, ParentSupervisor) :-
-	log(debug, supervisor, 'Starting supervisor ~w under ~w with options ~p', [Supervisor, ParentSupervisor, Options]),
+	log(debug, supervisor, "Starting supervisor ~w under ~w with options ~p", [Supervisor, ParentSupervisor, Options]),
 	actor_started(Supervisor,
 		supervisor : run_supervised(Options, ParentSupervisor)),
 	option(children(Children),
@@ -123,13 +123,13 @@ singleton_thread_name(Module, Name) :-
 	ModuleGoal =.. [ : , Module, name(Name)],
 	catch(call(ModuleGoal),
 		Exception,
-		(log(debug, supervisor, 'Failed to get the singleton thread name of ~w: ~p', [Module, Exception]),
+		(log(debug, supervisor, "Failed to get the singleton thread name of ~w: ~p", [Module, Exception]),
 			fail)).
     
 % Starting a dynamic, supervised named child actor of some kind (supervisor, worker or pubsub) with options and implemented by a given module
 
 starting_dynamic_child(Supervisor, Kind, Module, Name, Options) :-
-	log(debug, supervisor, 'Starting dynamic supervised ~w ~w named ~w with ~p under ~w', [Kind, Module, Name, Options, Supervisor]),
+	log(debug, supervisor, "Starting dynamic supervised ~w ~w named ~w with ~p under ~w", [Kind, Module, Name, Options, Supervisor]),
 	% The default restart strategy is transient
 	option(restarted(Restart),
 		Options,
@@ -169,7 +169,7 @@ started(Name, supervisor, Options, Supervisor) :-
 
 run_unsupervised(Options) :-
 	static_children_started(Options),
-	log(debug, supervisor, 'Started static children ~p', [Options]),
+	log(debug, supervisor, "Started static children ~p", [Options]),
 	catch(run(Options),
 		Exit,
 		exit_processed(Exit)).
@@ -197,7 +197,7 @@ static_children_started(Options) :-
 	option(children(Children),
 		Options,
 		[]),
-	log(debug, supervisor, 'Starting static children ~p', [Children]),
+	log(debug, supervisor, "Starting static children ~p", [Children]),
 	(member(pubsub, Children) ->
 	static_child_started(pubsub);
 	true),
@@ -207,15 +207,15 @@ static_children_started(Options) :-
 
 exit_processed(Exit) :-
 	thread_self(Supervisor),
-	log(warn, supervisor, 'Exit ~p of unsupervised ~w', [Exit, Supervisor]),
+	log(warn, supervisor, "Exit ~p of unsupervised ~w", [Exit, Supervisor]),
 	all_children_stopped(Supervisor),
-	log(warn, supervisor, 'Detaching and exiting thread ~w', [Supervisor]),
+	log(warn, supervisor, "Detaching and exiting thread ~w", [Supervisor]),
 	thread_detach(Supervisor),
 	thread_exit(true).
 
 exit_processed(Exit, ParentSupervisor) :-
 	thread_self(Supervisor),
-	log(warn, supervisor, 'Exit ~p of supervised ~w', [Exit, Supervisor]),
+	log(warn, supervisor, "Exit ~p of supervised ~w", [Exit, Supervisor]),
 	all_children_stopped(Supervisor),
 	thread_detach(Supervisor),
 	notify_supervisor(ParentSupervisor, Supervisor, Exit),
@@ -245,17 +245,17 @@ signal_processed(control(stopped)) :-
 % Options not used at the moment
 
 message_processed(child_started(StaticOrDynamic, Kind, Module, Name, Goal, Restart), _) :-
-	log(info, supervisor, 'Starting ~w ~w child ~w named ~w by calling ~p', [StaticOrDynamic, Kind, Module, Name, Goal]),
+	log(info, supervisor, "Starting ~w ~w child ~w named ~w by calling ~p", [StaticOrDynamic, Kind, Module, Name, Goal]),
 	child_forgotten(Kind, Module, Name),
 	catch(child_running(StaticOrDynamic, Kind, Module, Name, Goal, Restart),
 		Exception,
-		log(debug, supervisor, 'Failed to start child ~w named ~w: ~p', [Kind, Name, Exception])).
+		log(debug, supervisor, "Failed to start child ~w named ~w: ~p", [Kind, Name, Exception])).
 
 message_processed(child_stopped(Kind, Module, Name), _) :-
 	do_child_stopped(Kind, Module, Name).
 
 message_processed(control(exit), _) :-
-	log(debug, supervisor, 'Received control(exit)'),
+	log(debug, supervisor, "Received control(exit)"),
 	throw(exit(normal)).
 
 % A child exited
@@ -263,14 +263,14 @@ message_processed(control(exit), _) :-
 message_processed(exited(Kind, Module, Name, Exit), _) :-
 	thread_self(Supervisor),
 	child(StaticOrDynamic, Supervisor, Kind, Module, Name, Goal, Restart),
-	log(debug, supervisor, 'Child ~w ~w named ~w exited with ~p. Restart is ~w', [Kind, Module, Name, Exit, Restart]),
+	log(debug, supervisor, "Child ~w ~w named ~w exited with ~p. Restart is ~w", [Kind, Module, Name, Exit, Restart]),
 	!,
 	% avoid race condition by letting the exiting thread complete its exit
 	sleep(0.5),
 	child_maybe_restarted(StaticOrDynamic, Supervisor, Kind, Module, Name, Goal, Exit, Restart).
 
 message_processed(exited(Kind, Module, Name, Exit), _) :-
-	log(debug, supervisor, 'Unsupervised ~w child ~w named ~w exited (~p)', [Kind, Module, Name, Exit]).
+	log(debug, supervisor, "Unsupervised ~w child ~w named ~w exited (~p)", [Kind, Module, Name, Exit]).
 
 % message_processed(control(die)), _) :-
     % thread_self(Supervisor),
@@ -280,7 +280,7 @@ message_processed(exited(Kind, Module, Name, Exit), _) :-
 
 message_processed(query(children, From), _) :-
 	thread_self(Supervisor),
-	log(debug, supervisor, '~w processing query(children, ~w)', [Supervisor, From]),
+	log(debug, supervisor, "~w processing query(children, ~w)", [Supervisor, From]),
 	findall(child(Kind, Name),
 		child(_, Supervisor, Kind, _, Name, _, _),
 		Children),
@@ -288,13 +288,13 @@ message_processed(query(children, From), _) :-
 		response(Children, children, Supervisor)).
 
 all_children_stopped(Supervisor) :-
-	log(debug, supervisor, 'Stopping all children of ~w', [Supervisor]),
+	log(debug, supervisor, "Stopping all children of ~w", [Supervisor]),
 	forall((child(_, Supervisor, Kind, Module, Name, _, _)),
 		do_child_stopped(Kind, Module, Name)).
 
 static_child_started(pubsub) :-
 	thread_self(Supervisor),
-	log(debug, supervisor, 'Starting static supervised pubsub under ~w', [Supervisor]),
+	log(debug, supervisor, "Starting static supervised pubsub under ~w", [Supervisor]),
 	singleton_thread_name(pubsub, Name),
 	Goal =.. [
 		started,
@@ -306,13 +306,13 @@ static_child_started(pubsub) :-
 	child_running(static, worker, pubsub, Name, ChildGoal, transient).
 
 static_child_started(worker(Module, Options)) :-
-	log(debug, supervisor, 'Starting singleton ~w static child with ~p', [Module, Options]),
+	log(debug, supervisor, "Starting singleton ~w static child with ~p", [Module, Options]),
 	singleton_thread_name(Module, Name),
 	static_child_started(worker(Name, Module, Options)).
 
 static_child_started(worker(Name, Module, Options)) :-
 	thread_self(Supervisor),
-	log(debug, supervisor, '~w starting supervised static worker ~w named ~w with ~p under ~w', [Supervisor, Module, Name, Options, Supervisor]),
+	log(debug, supervisor, "~w starting supervised static worker ~w named ~w with ~p under ~w", [Supervisor, Module, Name, Options, Supervisor]),
 	option(restarted(Restart),
 		Options,
 		transient),
@@ -322,7 +322,7 @@ static_child_started(worker(Name, Module, Options)) :-
 
 static_child_started(supervisor(Name, Options)) :-
 	thread_self(Supervisor),
-	log(debug, supervisor, 'Starting supervised static supervisor named ~w with ~p under ~w', [Name, Options, Supervisor]),
+	log(debug, supervisor, "Starting supervised static supervisor named ~w with ~p under ~w", [Name, Options, Supervisor]),
 	option(restarted(Restart),
 		Options,
 		transient),
@@ -336,7 +336,7 @@ child_running(StaticOrDynamic, Kind, Module, Name, Goal, Restart) :-
 	child_remembered(StaticOrDynamic, Kind, Module, Name, Goal, Restart).
 
 do_child_stopped(Kind, Module, Name) :-
-	log(debug, supervisor, 'Stopping ~w child ~w named ~w', [Kind, Module, Name]),
+	log(debug, supervisor, "Stopping ~w child ~w named ~w", [Kind, Module, Name]),
 	control_sent(Name, Module, stopped),
 	actor_stopped(Name),
 	child_forgotten(Kind, Module, Name).
@@ -344,7 +344,7 @@ do_child_stopped(Kind, Module, Name) :-
 dynamic_children_maybe_restarted(true) :-
 	!,
 	thread_self(Supervisor),
-	log(debug, supervisor, 'Restarting dynamic children of ~w', [Supervisor]),
+	log(debug, supervisor, "Restarting dynamic children of ~w", [Supervisor]),
 	forall(child(dynamic, Supervisor, Kind, Module, Name, Goal, Restart),
 		child_maybe_restarted(dynamic,
 			Supervisor,
@@ -369,9 +369,9 @@ child_maybe_restarted(StaticOrDynamic, Supervisor, Kind, Module, Name, Goal, _, 
 		child_started(StaticOrDynamic, Kind, Module, Name, RestartingGoal, transient)).
 
 child_maybe_restarted(StaticOrDynamic, Supervisor, Kind, Module, Name, Goal, _, permanent) :-
-	log(debug, supervisor, 'Getting restarting goal from ~p', [Goal]),
+	log(debug, supervisor, "Getting restarting goal from ~p", [Goal]),
 	child_restarting_goal(Goal, RestartingGoal),
-	log(debug, supervisor, 'Restarting goal is ~p', [RestartingGoal]),
+	log(debug, supervisor, "Restarting goal is ~p", [RestartingGoal]),
 	sent(Supervisor,
 		child_started(StaticOrDynamic, Kind, Module, Name, RestartingGoal, permanent)).
 
@@ -387,17 +387,17 @@ child_restarting_goal(ModuleGoal, RestartingModuleGoal) :-
 	RestartingModuleGoal =.. [ : , Kind, RestartingGoal].
 
 all_children_forgotten(Supervisor) :-
-	log(debug, supervisor, 'Forgetting all children of ~w', [Supervisor]),
+	log(debug, supervisor, "Forgetting all children of ~w", [Supervisor]),
 	retractall(child(_, Supervisor, _, _, _, _)).
 
 child_forgotten(Kind, Module, Name) :-
 	thread_self(Supervisor),
-	log(debug, supervisor, 'Forgetting ~w ~w named ~w child of ~w', [Kind, Module, Name, Supervisor]),
+	log(debug, supervisor, "Forgetting ~w ~w named ~w child of ~w", [Kind, Module, Name, Supervisor]),
 	retractall(child(_, Supervisor, Kind, Module, Name, _, _)).
 
 
 child_remembered(StaticOrDynamic, Kind, Module, Name, Goal, Restart) :-
 	thread_self(Supervisor),
 	Child = child(StaticOrDynamic, Supervisor, Kind, Module, Name, Goal, Restart),
-	log(debug, supervisor, 'Remembering ~p', [Child]),
+	log(debug, supervisor, "Remembering ~p", [Child]),
 	assert(Child).

@@ -28,7 +28,7 @@
 %%% Supervised behavior
 
 started(Name, Module, Options, Supervisor) :-
-	log(debug, worker, 'Starting ~w implemented by ~w with options ~p supervised by ~w', [Name, Module, Options, Supervisor]), 
+	log(debug, worker, "Starting ~w implemented by ~w with options ~p supervised by ~w", [Name, Module, Options, Supervisor]), 
 	option(
 		topics(Topics), Options, []), 
 	option(init(Args), Options, []),
@@ -66,7 +66,7 @@ exit_processed(Module, Name, Exit, Supervisor) :-
 	thread_exit(true).
 
 run_started(Topics, Init, Handler) :-
-	log(debug, worker, 'Start run of ~@ with topics ~p, init ~p and handler ~p', [self, Topics, Init, Handler]),
+	log(debug, worker, "Start run of ~@ with topics ~p, init ~p and handler ~p", [self, Topics, Init, Handler]),
 	Init =.. [ : , Module, Head, Args], 
 	Goal =.. [Head, Args, State], 
 	InitGoal =.. [ : , Module, Goal],
@@ -76,7 +76,7 @@ run_started(Topics, Init, Handler) :-
 
 run(Handler, State) :-
 	thread_self(Name), 
-	log(debug, worker, 'Worker ~w is waiting...', [Name]), 
+	log(debug, worker, "Worker ~w is waiting...", [Name]), 
 	thread_get_message(Message), 
 	message_processed(Message, Handler, State, NewState), 
 	run(Handler, NewState).
@@ -87,7 +87,7 @@ signal_processed(control(stopped)) :-
 	thread_exit(true).
 
 signal_processed(Signal) :-
-	log(info, worker, '~@ received unknown signal ~p', [self, Signal]).
+	log(info, worker, "~@ received unknown signal ~p", [self, Signal]).
 
 % Write out the current state of the worker
 

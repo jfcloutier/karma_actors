@@ -3,8 +3,8 @@
     actor_started/2, actor_started/3, actor_exited/1,
     actor_ready/1, actor_stopped/1, actor_stopped/2, 
     sent/2, call_at_interval/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, query_answered/2, query_answered/3, query_answered/4,
-    empty_state/1, get_state/3, put_state/3, put_state/4,
-    pick_some/2]).
+    empty_state/1, get_state/3, put_state/3, put_state/4, acc_state/4, dec_state/4,
+    count_in/3, pick_some/2]).
 
 :- use_module(utils(logger)).
 :- use_module(actors(timer)).
@@ -40,6 +40,27 @@ put_state(State, Pairs, NewState) :-
 put_state(State, Key, Value, NewState) :-
 	is_dict(State, state), 
 	put_dict(Key, State, Value, NewState).
+
+acc_state(State, Key, Value, NewState) :-
+	get_state(State, Key, Acc),
+	% Value could be a list of values
+    flatten([Value | Acc], Acc1),
+	put_state(State, Key, Acc1, NewState).
+
+dec_state(State, Key, Value, NewState) :-
+	get_state(State, Key, Acc),
+	select(Value, Acc, Acc1),
+	put_state(State, Key, Acc1, NewState).
+
+%! count_in(List+, +Item, -Count)
+% the number of times an item is in a list
+count_in([], _, 0).
+count_in([Item | Rest], Item, Count) :-
+	count_in(Rest, Item, C),
+	Count is C + 1.
+count_in([E | Rest], Item, Count) :-
+	E \= Item,
+	count_in(Rest, Item, Count).
 
 % Pick a random subset of a list, at least one but no more than half. Deterministic.
 pick_some([], []).

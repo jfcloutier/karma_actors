@@ -28,8 +28,7 @@ all_subscribed(Subs) :-
 	self(Subscriber),
 	all_subscribed(Subscriber, Subs).
 
-all_subscribed(_, []) :-
-	!.
+all_subscribed(_, []).
 all_subscribed(Subscriber, [Sub|Others]) :-
 	subscribed(Subscriber, Sub),
 	all_subscribed(Subscriber, Others).
@@ -82,7 +81,9 @@ subscription(Topic) :-
 
 subscription(Subscriber, Topic) :-
 	name(PubSub),
-	query_answered(PubSub, subscription(Subscriber, Topic), true).
+	query_answered(PubSub,
+		subscription(Subscriber, Topic),
+		true).
 
 %% Private
 
@@ -105,7 +106,7 @@ handled(message(subscribed(Subscriber, Sub), _), State, NewState) :-
 
 handled(message(unsubscribed(Subscriber, Sub), _), State, NewState) :-
 	log(debug, pubsub, "Unsubscribing ~w from ~w~n", [Subscriber, Sub]),
-	 remove_subscription(Subscriber, Sub, State, NewState).
+		remove_subscription(Subscriber, Sub, State, NewState).
 
 handled(message(unsubscribed_from(Subscriber, Source), _), State, NewState) :-
 	log(debug, pubsub, "Unsubscribing ~w from source ~w~n", [Subscriber, Source]),
@@ -120,42 +121,67 @@ handled(message(pub(Topic, Payload, Source), _), State, State) :-
 
 handled(query(subscription(Subscriber, Topic)), State, true) :-
 	get_state(State, subscriptions, Subscriptions),
-	member(subscription(Subscriber, T), Subscriptions),
-	sub_match(Topic, T), !.
+	member(subscription(Subscriber, T),
+		Subscriptions),
+	sub_match(Topic, T),
+	!.
 handled(query(subscription(_, _)), _, false).
 
 broadcast(event(Topic, Payload, Source), State) :-
 	Sub = Topic - Source,
 	get_state(State, subscriptions, Subscriptions),
-	foreach((member(subscription(Name, Subscription),Subscriptions), 
+	log(debug, pubsub, "Broadcasting ~p to subscriptions ~p", [event(Topic, Payload, Source), Subscriptions]),
+	foreach((member(subscription(Name, Subscription),
+				Subscriptions),
 			sub_match(Sub, Subscription)),
 		event_sent_to(event(Topic, Payload, Source),
 			Name)).
 
-sub_match(Topic - _, Topic - any).
-sub_match(Topic - any, Topic - _).
-sub_match(Topic - Source, Topic - Source).
+sub_match(Topic-_, Topic-any).
+sub_match(Topic-any, Topic-_).
+sub_match(Topic-Source, Topic-Source).
 
 event_sent_to(Event, Name) :-
 	log(debug, pubsub, "Sending event ~p to ~w~n", [Event, Name]),
 	sent(Name, Event).
 
-add_subscription(Subscriber, Topic-Source, State, NewState) :-
-	Sub = Topic-Source, !,
+% Adding a subscription removes a subscription subsumed by it, if any,
+% or it is a noop if it is subsumed by an existing subscription.
+add_subscription(Subscriber, Topic-any, State, NewState) :-
 	get_state(State, subscriptions, Subscriptions),
-	(member(subscription(Subscriber, Sub),
-			Subscriptions) ->
+	((member(subscription(Subscriber, Sub),
+				Subscriptions),
+			sub_match(Sub, Topic - any)) ->
+	(delete(Subscriptions, Sub, Subscriptions1),
+			put_state(State,
+				subscriptions,
+				[subscription(Subscriber, Topic - any)|Subscriptions1],
+				NewState));
+	put_state(State,
+			subscriptions,
+			[subscription(Subscriber, Topic - any)|Subscriptions],
+			NewState)).
+
+
+add_subscription(Subscriber, Topic-Source, State, NewState) :-
+	Source \== any,
+	get_state(State, subscriptions, Subscriptions),
+	((member(subscription(Subscriber, Sub),
+				Subscriptions),
+			sub_match(Sub, Topic - Source)) ->
 	true;
 	put_state(State,
 			subscriptions,
-			[subscription(Subscriber, Sub)|Subscriptions],
+			[subscription(Subscriber, Topic - Source)|Subscriptions],
 			NewState)).
-
+		
 add_subscription(Subscriber, Topic, State, NewState) :-
-	add_subscription(Subscriber, Topic-any, State, NewState).
+	 \+ unifiable(_ - _, Topic, _),
+	add_subscription(Subscriber, Topic - any, State, NewState).
 
 remove_subscription(Subscriber, Topic-Source, State, NewState) :-
-	Sub = Topic-Source, !,
+	Sub = Topic - Source,
+	!,
 	get_state(State, subscriptions, Subscriptions),
 	delete_matching_subs(Subscriptions,
 		subscription(Subscriber, Sub),
@@ -163,7 +189,7 @@ remove_subscription(Subscriber, Topic-Source, State, NewState) :-
 	put_state(State, subscriptions, Subscriptions1, NewState).
 
 remove_subscription(Subscriber, Topic, State, NewState) :-
-	remove_subscription(Subscriber, Topic-any, State, NewState).
+		remove_subscription(Subscriber, Topic - any, State, NewState).
 
 remove_subscriptions_from(Subscriber, Source, State, NewState) :-
 	get_state(State, subscriptions, Subscriptions),
@@ -172,21 +198,23 @@ remove_subscriptions_from(Subscriber, Source, State, NewState) :-
 
 delete_matching_subs([], _, []).
 
-delete_matching_subs([subscription(Subscriber, Sub) | Rest], subscription(Subscriber, DeleteSub), RemainingSubscriptions) :-
-	sub_match(Sub, DeleteSub), !,
-	delete_matching_subs(Rest, subscription(Subscriber, DeleteSub), RemainingSubscriptions).
+delete_matching_subs([subscription(Subscriber, Sub)|Rest], subscription(Subscriber, DeleteSub), RemainingSubscriptions) :-
+	sub_match(Sub, DeleteSub),
+	!,
+	delete_matching_subs(Rest,
+		subscription(Subscriber, DeleteSub),
+		RemainingSubscriptions).
 	
-delete_matching_subs([Subscription | Rest],
-	subscription(Subscriber, DeleteSub),
-		[Subscription | RemainingSubscriptions]) :-
-			delete_matching_subs(Rest, subscription(Subscriber, DeleteSub),
+delete_matching_subs([Subscription|Rest], subscription(Subscriber, DeleteSub), [Subscription|RemainingSubscriptions]) :-
+	delete_matching_subs(Rest,
+		subscription(Subscriber, DeleteSub),
 		RemainingSubscriptions).
 
-delete_subs_from([], _, _, []) .
-delete_subs_from([subscription(Subscriber, _ - Source) | Rest], Subscriber, Source, RemainingSubscriptions) :-
+delete_subs_from([], _, _, []).
+delete_subs_from([subscription(Subscriber, _-Source)|Rest], Subscriber, Source, RemainingSubscriptions) :-
 	!,
 	delete_subs_from(Rest, Subscriber, Source, RemainingSubscriptions).
-delete_subs_from([Subscription | Rest], Subscriber, Source, [Subscription | RemainingSubscriptions]) :-
+delete_subs_from([Subscription|Rest], Subscriber, Source, [Subscription|RemainingSubscriptions]) :-
 	delete_subs_from(Rest, Subscriber, Source, RemainingSubscriptions).
 
 remove_all_subscriptions(Subscriber, State, NewState) :-

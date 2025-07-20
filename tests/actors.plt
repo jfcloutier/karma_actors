@@ -3,7 +3,6 @@
 [load].
 [load_tests].
 [utils(logger)].
-['tests/actors/actors.plt'].
 set_log_level(debug).
 run_tests(actors).
 */
@@ -380,5 +379,7 @@ test(communicating_with_supervised_static_children) :-
 		 \+ is_thread(bottom)), 
 	assertion(
 		 \+ is_thread(top)).
+
+%%% TODO - add test for duplicate and subsumed subscriptions, then broadcasts
 
 :- end_tests(actors).

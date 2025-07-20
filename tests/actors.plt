@@ -1,6 +1,7 @@
 
 /*
 [load].
+[load_tests].
 [utils(logger)].
 ['tests/actors/actors.plt'].
 set_log_level(debug).

@@ -101,15 +101,15 @@ signal_processed(control(stopped)) :-
 	worker : stopped.
 
 handled(message(subscribed(Subscriber, Sub), _), State, NewState) :-
-	log(debug, pubsub, "Subscribing ~w to ~w~n", [Subscriber, Sub]),
+	log(debug, pubsub, "Subscribing ~w to ~p", [Subscriber, Sub]),
 	add_subscription(Subscriber, Sub, State, NewState).
 
 handled(message(unsubscribed(Subscriber, Sub), _), State, NewState) :-
-	log(debug, pubsub, "Unsubscribing ~w from ~w~n", [Subscriber, Sub]),
+	log(debug, pubsub, "Unsubscribing ~w from ~p", [Subscriber, Sub]),
 		remove_subscription(Subscriber, Sub, State, NewState).
 
 handled(message(unsubscribed_from(Subscriber, Source), _), State, NewState) :-
-	log(debug, pubsub, "Unsubscribing ~w from source ~w~n", [Subscriber, Source]),
+	log(debug, pubsub, "Unsubscribing ~w from source ~p", [Subscriber, Source]),
 	 remove_subscriptions_from(Subscriber, Source, State, NewState).
 
 handled(message(all_unsubscribed(Subscriber), _), State, NewState) :-
@@ -142,7 +142,7 @@ sub_match(Topic-any, Topic-_).
 sub_match(Topic-Source, Topic-Source).
 
 event_sent_to(Event, Name) :-
-	log(debug, pubsub, "Sending event ~p to ~w~n", [Event, Name]),
+	log(debug, pubsub, "Sending event ~p to ~w", [Event, Name]),
 	sent(Name, Event).
 
 % Adding a subscription removes a subscription subsumed by it, if any,
@@ -162,14 +162,13 @@ add_subscription(Subscriber, Topic-any, State, NewState) :-
 			[subscription(Subscriber, Topic - any)|Subscriptions],
 			NewState)).
 
-
 add_subscription(Subscriber, Topic-Source, State, NewState) :-
 	Source \== any,
 	get_state(State, subscriptions, Subscriptions),
 	((member(subscription(Subscriber, Sub),
 				Subscriptions),
 			sub_match(Sub, Topic - Source)) ->
-	true;
+	NewState = State;
 	put_state(State,
 			subscriptions,
 			[subscription(Subscriber, Topic - Source)|Subscriptions],

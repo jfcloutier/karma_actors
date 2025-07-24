@@ -156,7 +156,7 @@ query_answered(Question, Answer) :-
 	thread_self(Name), 
 	query_answered(Name, Question, Answer).
 
-% Send a semantic query and wait for an answer
+% Send a semantic query and wait for *the* answer
 
 query_answered(Name, Question, Answer) :-
 	query_answered(Name, Question, 5, Answer).
@@ -171,8 +171,10 @@ query_answered(Name, Question, Timeout, Answer) :-
 				
 			log(debug, actors, "~w is waiting for response(Answer, ~p, ~w), timeout is ~w", [From, Question, Name, Timeout]), 
 			thread_get_message(From, 
-				response(Answer, Question, Name), 
+				response(Response, Question, Name), 
 				[timeout(Timeout)]), 
+				!,
+				Answer = Response,
 			log(info, actors, "Got answer ~p from ~w to query ~p", [Answer, Name, Question])), Exception, 
 		(
 			log(warn, actors, "Failed to query ~w about ~p: ~p~n", [Name, Question, Exception]), fail)).

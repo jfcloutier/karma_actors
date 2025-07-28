@@ -228,8 +228,7 @@ notify_supervisor(ParentSupervisor, Supervisor, Exit) :-
 	sent(ParentSupervisor,
 		exited(supervisor, supervisor, Supervisor, Exit)).
 
-% Options are not used, yet.
-
+% Options hold static data that can be queried.
 run(Options) :-
 	thread_get_message(Message),
 	message_processed(Message, Options),
@@ -286,6 +285,18 @@ message_processed(query(children, From), _) :-
 		Children),
 	sent(From,
 		response(Children, children, Supervisor)).
+
+message_processed(query(option(OptionName), From), Options) :-
+	log(debug, supervisor, "~@ processing query(~w, ~w) with options ~p", [self, option(OptionName), From, Options]),
+	Option =.. [OptionName, Answer],
+	option(Option, Options),
+	log(debug, supervisor, "~@ got option ~p", [self, Option]),
+    sent(From,
+		response(Answer, option(OptionName), Supervisor)).
+
+message_processed(Message, Options) :-
+    log(warn, supervisor, "~@ can not process ~p with options ~p", [self, Message, Options]),
+	fail.
 
 all_children_stopped(Supervisor) :-
 	log(debug, supervisor, "Stopping all children of ~w", [Supervisor]),

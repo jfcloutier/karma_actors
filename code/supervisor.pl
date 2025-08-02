@@ -287,6 +287,7 @@ message_processed(query(children, From), _) :-
 		response(Children, children, Supervisor)).
 
 message_processed(query(option(OptionName), From), Options) :-
+	thread_self(Supervisor),
 	log(debug, supervisor, "~@ processing query(~w, ~w) with options ~p", [self, option(OptionName), From, Options]),
 	Option =.. [OptionName, Answer],
 	option(Option, Options),

@@ -12,7 +12,7 @@ Actors receive events `event(Topic, Payload, Source).
 TODO: Set an exclusive affinity to the PubSub thread to maxinimize its time being scheduled to a core
 */
 
-:- module(pubsub, [subscribed/1, subscribed/2, all_subscribed/1, all_subscribed/2, all_unsubscribed/0, all_unsubscribed/1, unsubscribed/1, unsubscribed/2, unsubscribed_from/1, unsubscribed_from/2, subscription/1, subscription/2, published/2]).
+:- module(pubsub, [subscribed/1, subscribed/2, all_subscribed/1, all_subscribed/2, all_unsubscribed/0, all_unsubscribed/1, unsubscribed/1, unsubscribed/2, unsubscribed_from/1, unsubscribed_from/2, subscription/1, subscription/2, published/1, published/2]).
 
 :- use_module(library(aggregate)).
 :- use_module(utils(logger)).
@@ -68,6 +68,9 @@ all_unsubscribed(Subscriber) :-
 	name(Pubsub),
 	message_sent(Pubsub,
 		all_unsubscribed(Subscriber)).
+
+published(Topic) :-
+	published(Topic, []).
 
 published(Topic, Payload) :-
 	self(Source),

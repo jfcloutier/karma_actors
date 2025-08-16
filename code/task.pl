@@ -15,8 +15,7 @@ do_and_then(Task, Completion) :-
     log(debug, task, "Task ~w completed doing ~p", [Id, Task]).
 
 do_after(Task, DelaySecs) :-
-    log(debug, task, "Doing task ~p and after ~w seconds delay", [Task, DelaySecs]),
-    sleep(DelaySecs),
-	thread_create(Task, Id, [detached(true)]),
+    log(debug, task, "Doing task ~p and after ~w seconds delay", [Task, DelaySecs]), 
+	thread_create((sleep(DelaySecs),Task), Id, [detached(true)]),
     log(debug, task, "Task ~w completed doing ~p after ~w seconds", [Id, Task, DelaySecs]).
  

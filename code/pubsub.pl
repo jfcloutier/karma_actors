@@ -130,15 +130,29 @@ handled(query(subscription(Subscriber, Topic)), State, true) :-
 	!.
 handled(query(subscription(_, _)), _, false).
 
+% Use are many as half the available cores to concurrently broadcast the event to its intended targets.
 broadcast(event(Topic, Payload, Source), State) :-
+	targets(State, Topic, Source, Targets),
+	log(debug, pubsub, "Broadcasting ~p to targets ~p", [event(Topic, Payload, Source), Targets]),
+	length(Targets, TargetCount),
+	TargetCount > 0,
+	!,
+	current_prolog_flag(cpu_count, CPUCount),
+	HalfCPUCount is max(1, div(CPUCount, 2)),
+	NumThreads is min(TargetCount, HalfCPUCount),
+	concurrent_forall(
+		   member(Target, Targets),
+		   event_sent_to(event(Topic, Payload, Source), Target),
+		   [threads(NumThreads)]).
+
+broadcast(_, _).
+
+targets(State, Topic, Source, Targets) :-
 	Sub = Topic - Source,
 	get_state(State, subscriptions, Subscriptions),
-	log(debug, pubsub, "Broadcasting ~p to subscriptions ~p", [event(Topic, Payload, Source), Subscriptions]),
-	concurrent_forall(
-		   (member(subscription(Name, Subscription), Subscriptions),
-			sub_match(Sub, Subscription)),
-		   event_sent_to(event(Topic, Payload, Source), Name),
-		   [threads(10)]).
+	setof(Name, 
+		  (member(subscription(Name, Subscription), Subscriptions), sub_match(Sub, Subscription)), 
+		  Targets).
 
 sub_match(Topic-_, Topic-any).
 sub_match(Topic-any, Topic-_).

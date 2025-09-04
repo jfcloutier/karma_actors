@@ -134,11 +134,11 @@ broadcast(event(Topic, Payload, Source), State) :-
 	Sub = Topic - Source,
 	get_state(State, subscriptions, Subscriptions),
 	log(debug, pubsub, "Broadcasting ~p to subscriptions ~p", [event(Topic, Payload, Source), Subscriptions]),
-	foreach((member(subscription(Name, Subscription),
-				Subscriptions),
+	concurrent_forall(
+		   (member(subscription(Name, Subscription), Subscriptions),
 			sub_match(Sub, Subscription)),
-		event_sent_to(event(Topic, Payload, Source),
-			Name)).
+		   event_sent_to(event(Topic, Payload, Source), Name),
+		   [threads(10)]).
 
 sub_match(Topic-_, Topic-any).
 sub_match(Topic-any, Topic-_).

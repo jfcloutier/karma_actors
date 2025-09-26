@@ -2,9 +2,9 @@
     self/1, 
     actor_started/2, actor_started/3, actor_exited/1,
     actor_ready/1, actor_stopped/1, actor_stopped/2, 
-    sent/2, call_at_interval/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, query_answered/2, query_answered/3, query_answered/4,
+    sent/2, call_at_interval/5, call_later/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, query_answered/2, query_answered/3, query_answered/4,
     empty_state/1, get_state/3, put_state/3, put_state/4, acc_state/4, dec_state/4,
-    count_in/3, pick_some/2]).
+    count_in/3, pick_some/2, remember_one/1]).
 
 :- use_module(utils(logger)).
 :- use_module(actors(timer)).
@@ -134,7 +134,13 @@ sent(Name, Message) :-
 call_at_interval(Target, Tag, Message, Delay, Timer) :-
 	self(Name), 
 	atomic_list_concat([Name, Tag], "_", Timer), 
-	timer : started(Timer, 
+	timer : repeated(Timer, 
+		thread_send_message(Target, Message), Delay).
+
+call_later(Target, Tag, Message, Delay, Timer) :-
+	self(Name), 
+	atomic_list_concat([Name, Tag], "_", Timer), 
+	timer : once(Timer, 
 		thread_send_message(Target, Message), Delay).
 
 % Send self a message
@@ -211,3 +217,9 @@ actor_stopped(Name, CountDown) :-
 		log(debug, actors, "Waiting for actor thread stopped ~w (~w)~n", [Name, CountDown]), 
 		sleep(0.25), AttemptsLeft is CountDown - 1, 
 		actor_stopped(Name, AttemptsLeft)).
+
+remember_one(Term) :-
+    Term =.. [Head | Args],
+    length(Args, Arity),
+    abolish(Head, Arity),
+    assert(Term).

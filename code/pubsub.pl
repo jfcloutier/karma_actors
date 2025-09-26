@@ -133,10 +133,10 @@ handled(query(subscription(_, _)), _, false).
 % Use are many as half the available cores to concurrently broadcast the event to its intended targets.
 broadcast(event(Topic, Payload, Source), State) :-
 	targets(State, Topic, Source, Targets),
-	log(debug, pubsub, "Broadcasting ~p to targets ~p", [event(Topic, Payload, Source), Targets]),
 	length(Targets, TargetCount),
 	TargetCount > 0,
 	!,
+	log(debug, pubsub, "Broadcasting ~p to targets ~p", [event(Topic, Payload, Source), Targets]),
 	current_prolog_flag(cpu_count, CPUCount),
 	HalfCPUCount is max(1, div(CPUCount, 2)),
 	NumThreads is min(TargetCount, HalfCPUCount),

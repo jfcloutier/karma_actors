@@ -8,10 +8,17 @@ Timer creates threads to periodically call goals until stopped.
 
 :- use_module(utils(logger)).
 
-started(Timer, Goal, Delay) :-
+repeated(Timer, Goal, Delay) :-
 	log(debug, timer, "Timer ~w will be executing ~p every ~w seconds", [Timer, Goal, Delay]), 
 	thread_create(
-		run(Goal, Delay), _, 
+		run(Goal, Delay, repeat), _, 
+		[alias(Timer), 
+		detached(true)]).
+
+once(Timer, Goal, Delay) :-
+	log(debug, timer, "Timer ~w will be executing ~p in ~w seconds", [Timer, Goal, Delay]), 
+	thread_create(
+		run(Goal, Delay, once), _, 
 		[alias(Timer), 
 		detached(true)]).
 
@@ -24,15 +31,16 @@ stopped(Timer) :-
 
 % Run in thread
 
-run(Goal, Delay) :-
+run(Goal, Delay, Mode) :-
 	sleep(Delay), 
 	catch(
 		(
 			log(debug, timer, "Timer ~@ is executing ~p after waiting ~w seconds", [self, Goal, Delay]), 
-			call(Goal)), Exception, 
+			call(Goal)), 
+			Exception, 
 		(
 			log(warn, timer, "Failed to execute ~p: ~p", [Goal, Exception]), true)), 
-	run(Goal, Delay).
+	(Mode == repeat -> run(Goal, Delay, Mode) ; true).
 
 exit_timer :-
 	thread_self(Timer), 

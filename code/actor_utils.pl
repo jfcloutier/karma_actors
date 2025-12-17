@@ -2,9 +2,9 @@
     self/1, 
     actor_started/2, actor_started/3, actor_exited/1,
     actor_ready/1, actor_stopped/1, actor_stopped/2, 
-    sent/2, call_at_interval/5, call_later/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, query_answered/2, query_answered/3, query_answered/4,
+    sent/2, call_at_interval/5, call_later/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, message_sent/3, query_answered/2, query_answered/3, query_answered/4,
     empty_state/1, get_state/3, put_state/3, put_state/4, acc_state/4, dec_state/4,
-    count_in/3, pick_some/2, remember_one/1]).
+    count_in/3, pick_some/2]).
 
 :- use_module(utils(logger)).
 :- use_module(actors(timer)).
@@ -41,17 +41,20 @@ put_state(State, Key, Value, NewState) :-
 	is_dict(State, state), 
 	put_dict(Key, State, Value, NewState).
 
+% Add to a list of values without duplicates
 acc_state(State, Key, Value, NewState) :-
 	get_state(State, Key, Acc),
 	% Value could be a list of values
     flatten([Value | Acc], Acc1),
-	put_state(State, Key, Acc1, NewState).
+	list_to_set(Acc1, Acc2),
+	put_state(State, Key, Acc2, NewState).
 
 dec_state(State, Key, Value, NewState) :-
 	get_state(State, Key, Acc),
 	select(Value, Acc, Acc1),
 	put_state(State, Key, Acc1, NewState).
 
+% 
 %! count_in(List+, +Item, -Count)
 % the number of times an item is in a list
 count_in([], _, 0).
@@ -153,8 +156,10 @@ message_sent(Message) :-
 
 message_sent(Name, Message) :-
 	thread_self(From), 
-	sent(Name, 
-		message(Message, From)).
+	message_sent(Name, Message, From).
+
+message_sent(Name, Message, From) :-
+	sent(Name, message(Message, From)).
 
 % Send self a query
 
@@ -217,9 +222,3 @@ actor_stopped(Name, CountDown) :-
 		log(debug, actors, "Waiting for actor thread stopped ~w (~w)~n", [Name, CountDown]), 
 		sleep(0.25), AttemptsLeft is CountDown - 1, 
 		actor_stopped(Name, AttemptsLeft)).
-
-remember_one(Term) :-
-    Term =.. [Head | Args],
-    length(Args, Arity),
-    abolish(Head, Arity),
-    assert(Term).

@@ -3,8 +3,8 @@
     actor_started/2, actor_started/3, actor_exited/1,
     actor_ready/1, actor_stopped/1, actor_stopped/2, 
     sent/2, call_at_interval/5, call_later/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, message_sent/3, query_answered/2, query_answered/3, query_answered/4,
-    empty_state/1, get_state/3, put_state/3, put_state/4, acc_state/4, dec_state/4,
-    count_in/3, pick_some/2]).
+    empty_state/1, get_state/3, put_state/3, put_state/4, acc_state/5, dec_state/4,
+    count_in/3, pick_some/2, members/2]).
 
 :- use_module(utils(logger)).
 :- use_module(actors(timer)).
@@ -42,20 +42,28 @@ put_state(State, Key, Value, NewState) :-
 	put_dict(Key, State, Value, NewState).
 
 % Add to a list of values without duplicates
-acc_state(State, Key, Value, NewState) :-
+acc_state(State, Key, Value, Sorter, NewState) :-
 	get_state(State, Key, Acc),
 	% Value could be a list of values
     flatten([Value | Acc], Acc1),
-	list_to_set(Acc1, Acc2),
+	predsort(Sorter, Acc1, Acc2),
+	% list_to_set(Acc1, Acc2),
 	put_state(State, Key, Acc2, NewState).
 
+dec_state(State, Key, Values, NewState) :-
+	is_list(Values),
+	get_state(State, Key, CurrentValues),
+	append(Values, RemainingValues, CurrentValues),
+	put_state(State, Key, RemainingValues, NewState).
+
 dec_state(State, Key, Value, NewState) :-
+	\+ is_list(Value),
 	get_state(State, Key, Acc),
 	select(Value, Acc, Acc1),
 	put_state(State, Key, Acc1, NewState).
 
 % 
-%! count_in(List+, +Item, -Count)
+%! count_in(+List, +Item, -Count)
 % the number of times an item is in a list
 count_in([], _, 0).
 count_in([Item | Rest], Item, Count) :-
@@ -75,6 +83,14 @@ pick_some(List, SubList) :-
 	length(Set, L), 
 	Max is max(1, round(L / 2)),
 	random_between(1, Max, N), 
+	take(N, PermutedList, SubList).
+
+%! members(-SubList, +List)
+% Pick a non-empty, non-strict subset of a list
+members(SubList, List) :-
+	random_permutation(List, PermutedList), 
+	length(List, L),
+	random_between(1, L, N), 
 	take(N, PermutedList, SubList).
 
 take(_, [], []).

@@ -4,7 +4,7 @@
     actor_ready/1, actor_stopped/1, actor_stopped/2, 
     sent/2, call_at_interval/5, call_later/5, control_sent/2, control_sent/3, message_sent/1, message_sent/2, message_sent/3, query_answered/2, query_answered/3, query_answered/4,
     empty_state/1, get_state/3, put_state/3, put_state/4, acc_state/5, dec_state/4,
-    count_in/3, pick_some/2, members/2]).
+    count_in/3, pick_some/2, take/3, members/2, members_or_none/2]).
 
 :- use_module(utils(logger)).
 :- use_module(actors(timer)).
@@ -92,6 +92,14 @@ members(SubList, List) :-
 	length(List, L),
 	random_between(1, L, N), 
 	take(N, PermutedList, SubList).
+
+%! members_or_none(-SubList, +List)
+% Pick a possibly empty, non-strict subset of a list
+members_or_none(SubList, List) :-
+	length(List, L),
+	random_between(0, L, N), 
+	take(N, List, SubList1),
+	random_permutation(SubList1, SubList).
 
 take(_, [], []).
 take(0, _, []).
